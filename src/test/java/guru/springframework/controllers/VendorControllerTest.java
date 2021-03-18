@@ -42,8 +42,86 @@ class VendorControllerTest {
                 .willReturn(Mono.just(new Vendor()));
 
         webTestClient.get()
-                .uri("/api/v1/vendors/XX00444")
+                .uri("/api/v1/vendors/someId")
                 .exchange()
                 .expectBody(Vendor.class);
+    }
+
+    @Test
+    void save() {
+        BDDMockito.given(vendorRepository.save(BDDMockito.any(Vendor.class)))
+                .willReturn(Mono.just(new Vendor()));
+
+        webTestClient.post()
+                .uri("/api/v1/vendors")
+                .bodyValue(new Vendor())
+                .exchange()
+                .expectStatus()
+                .isCreated();
+    }
+
+    @Test
+    void update() {
+        BDDMockito.given(vendorRepository.save(BDDMockito.any(Vendor.class)))
+                .willReturn(Mono.just(new Vendor()));
+
+        webTestClient.put()
+                .uri("/api/v1/vendors/someid")
+                .bodyValue(new Vendor())
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+    @Test
+    void patchWithNoChange() {
+        Vendor vendor = new Vendor();
+        vendor.setName("Vendor");
+        BDDMockito.given(vendorRepository.findById(BDDMockito.anyString()))
+                .willReturn(Mono.just(vendor));
+
+        BDDMockito.given(vendorRepository.save(BDDMockito.any(Vendor.class)))
+                .willReturn(Mono.just(new Vendor()));
+
+        Vendor vendorToUpdate = new Vendor();
+        vendorToUpdate.setName("Vendor");
+        webTestClient.patch()
+                .uri("/api/v1/vendors/someid")
+                .bodyValue(vendorToUpdate)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        BDDMockito.verify(vendorRepository, Mockito.never()).save(Mockito.any());
+    }
+    @Test
+    void patchWithChange() {
+        Vendor vendor = new Vendor();
+        vendor.setName("Vendor");
+        BDDMockito.given(vendorRepository.findById(BDDMockito.anyString()))
+                .willReturn(Mono.just(vendor));
+
+        BDDMockito.given(vendorRepository.save(BDDMockito.any(Vendor.class)))
+                .willReturn(Mono.just(new Vendor()));
+
+        Vendor vendorToUpdate = new Vendor();
+        vendorToUpdate.setName("Vendor01");
+        webTestClient.patch()
+                .uri("/api/v1/vendors/someid")
+                .bodyValue(vendorToUpdate)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        BDDMockito.verify(vendorRepository, Mockito.times(1)).save(Mockito.any());
+    }
+
+    @Test
+    void deleteById() {
+        webTestClient.delete()
+                .uri("/api/v1/vendors/someid")
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 }

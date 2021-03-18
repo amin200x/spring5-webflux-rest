@@ -13,11 +13,14 @@ import reactor.core.publisher.Mono;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CategoryControllerTest {
-    public static final String NAME = "Cat1";
+    public static final String NAME = "Cat";
     public static final String ID = "0XX1";
+    private static final String NAME1 ="Cat1" ;
+
     WebTestClient webTestClient;
-        CategoryRepository categoryRepository;
-        CategoryController categoryController;
+    CategoryRepository categoryRepository;
+    CategoryController categoryController;
+
     @BeforeEach
     void setUp() {
         categoryRepository = Mockito.mock(CategoryRepository.class);
@@ -45,9 +48,106 @@ class CategoryControllerTest {
                 .willReturn(Mono.just(category));
 
         webTestClient.get()
-                .uri("/api/v1/categories/"+ID)
+                .uri("/api/v1/categories/" + ID)
                 .exchange()
                 .expectBody(Category.class);
+
+    }
+
+    @Test
+    void save() {
+        Category category = new Category();
+        category.setName(NAME);
+        category.setId(ID);
+        BDDMockito.given(categoryRepository.save(BDDMockito.anyObject()))
+                .willReturn(Mono.just(category));
+
+        webTestClient.post()
+                .uri("/api/v1/categories/")
+                .bodyValue(category)
+                .exchange()
+                .expectStatus()
+                .isCreated();
+
+
+    }
+
+    @Test
+    void update() {
+        Category category = new Category();
+        category.setName(NAME);
+        category.setId(ID);
+
+
+        BDDMockito.given(categoryRepository.save(BDDMockito.any(Category.class)))
+                .willReturn(Mono.just(category));
+
+        webTestClient.put()
+                .uri("/api/v1/categories/" + ID)
+                .bodyValue(category)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+
+    }
+
+
+    @Test
+    void patchWithNoChange() {
+        Category category = new Category();
+        category.setName(NAME);
+        category.setId(ID);
+
+        BDDMockito.given(categoryRepository.findById(BDDMockito.anyString()))
+                .willReturn(Mono.just(category));
+
+        BDDMockito.given(categoryRepository.save(BDDMockito.any(Category.class)))
+                .willReturn(Mono.just(category));
+
+        webTestClient.patch()
+                .uri("/api/v1/categories/" + ID)
+                .bodyValue(category)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        BDDMockito.verify(categoryRepository, Mockito.never()).save(BDDMockito.any());
+    }
+
+    @Test
+    void patchWithChange() {
+        Category category = new Category();
+        category.setName(NAME);
+        category.setId(ID);
+
+        BDDMockito.given(categoryRepository.findById(BDDMockito.anyString()))
+                .willReturn(Mono.just(category));
+
+        BDDMockito.given(categoryRepository.save(BDDMockito.any(Category.class)))
+                .willReturn(Mono.just(category));
+        Category categoryToUpdate = new Category();
+        category.setName(NAME1);
+        category.setId(ID);
+
+        webTestClient.patch()
+                .uri("/api/v1/categories/" + ID)
+                .bodyValue(categoryToUpdate)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        BDDMockito.verify(categoryRepository, Mockito.times(1)).save(BDDMockito.any());
+    }
+    @Test
+    void delete() {
+
+        webTestClient.delete()
+                .uri("/api/v1/categories/" + ID)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
 
     }
 }
